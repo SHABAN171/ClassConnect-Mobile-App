@@ -99,7 +99,7 @@ The application is tested to ensure:
 - File uploads (PDF, images, documents)
 - Attendance tracking feature
 - Dark mode support
-- Admin dashboard for system management
+- Admin dashboard for system management.
 
 ---
 
