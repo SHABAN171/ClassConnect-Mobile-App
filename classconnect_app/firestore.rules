@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isTeacherOf(classId) {
+      return get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+    }
+
+    function isMemberOf(classId) {
+      let classData = get(/databases/$(database)/documents/classes/$(classId)).data;
+      return classData.teacherId == request.auth.uid
+        || request.auth.uid in classData.studentIds;
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /classes/{classId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.teacherId == request.auth.uid
+        && request.resource.data.studentIds == [];
+      // Teacher can update anything on their own class; a student may only
+      // add themself to studentIds (no other field may change).
+      allow update: if request.auth != null && (
+        resource.data.teacherId == request.auth.uid ||
+        (request.resource.data.diff(resource.data).affectedKeys() == ['studentIds'].toSet()
+          && request.resource.data.studentIds == resource.data.studentIds.concat([request.auth.uid]))
+      );
+      allow delete: if request.auth != null && resource.data.teacherId == request.auth.uid;
+
+      match /announcements/{announcementId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid
+          && isTeacherOf(classId);
+        allow update, delete: if request.auth != null
+          && resource.data.authorId == request.auth.uid;
+      }
+
+      match /assignments/{assignmentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid
+          && isTeacherOf(classId);
+        allow update, delete: if request.auth != null
+          && resource.data.authorId == request.auth.uid;
+      }
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid
+          && isMemberOf(classId);
+        allow update, delete: if request.auth != null
+          && resource.data.authorId == request.auth.uid;
+      }
+    }
+  }
+}
