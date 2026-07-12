@@ -1,12 +1,17 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../models/assignment_model.dart';
 
 class AssignmentService {
-  AssignmentService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  AssignmentService({FirebaseFirestore? firestore, FirebaseStorage? storage})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _storage = storage ?? FirebaseStorage.instance;
 
   final FirebaseFirestore _firestore;
+  final FirebaseStorage _storage;
 
   CollectionReference<Map<String, dynamic>> _assignments(String classId) {
     return _firestore
@@ -33,14 +38,27 @@ class AssignmentService {
     required DateTime dueDate,
     required String authorId,
     required String authorName,
-  }) {
-    return _assignments(classId).add({
+    Uint8List? fileBytes,
+    String? fileName,
+  }) async {
+    final doc = _assignments(classId).doc();
+    String? attachmentUrl;
+
+    if (fileBytes != null && fileName != null) {
+      final ref = _storage.ref('assignments/$classId/${doc.id}/$fileName');
+      await ref.putData(fileBytes);
+      attachmentUrl = await ref.getDownloadURL();
+    }
+
+    await doc.set({
       'title': title,
       'description': description,
       'dueDate': Timestamp.fromDate(dueDate),
       'authorId': authorId,
       'authorName': authorName,
       'createdAt': FieldValue.serverTimestamp(),
+      'attachmentUrl': ?attachmentUrl,
+      'attachmentName': ?fileName,
     });
   }
 }

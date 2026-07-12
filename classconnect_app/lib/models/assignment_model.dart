@@ -9,6 +9,8 @@ class AssignmentModel {
     required this.authorId,
     required this.authorName,
     required this.createdAt,
+    this.attachmentUrl,
+    this.attachmentName,
   });
 
   final String id;
@@ -18,6 +20,10 @@ class AssignmentModel {
   final String authorId;
   final String authorName;
   final DateTime? createdAt;
+  final String? attachmentUrl;
+  final String? attachmentName;
+
+  bool get hasAttachment => attachmentUrl != null && attachmentName != null;
 
   factory AssignmentModel.fromMap(String id, Map<String, dynamic> map) {
     final createdAt = map['createdAt'];
@@ -30,6 +36,8 @@ class AssignmentModel {
       authorId: map['authorId'] as String? ?? '',
       authorName: map['authorName'] as String? ?? '',
       createdAt: createdAt is Timestamp ? createdAt.toDate() : null,
+      attachmentUrl: map['attachmentUrl'] as String?,
+      attachmentName: map['attachmentName'] as String?,
     );
   }
 }

@@ -1,9 +1,10 @@
-enum UserRole { teacher, student }
+enum UserRole { teacher, student, admin }
 
 extension UserRoleX on UserRole {
   String get label => switch (this) {
     UserRole.teacher => 'Teacher',
     UserRole.student => 'Student',
+    UserRole.admin => 'Admin',
   };
 
   String get value => name;

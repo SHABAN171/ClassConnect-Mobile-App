@@ -43,4 +43,22 @@ class AuthService {
     if (!doc.exists) return null;
     return AppUser.fromMap(uid, doc.data()!);
   }
+
+  /// Firestore's `whereIn` accepts at most 10 values, so batch requests for
+  /// larger rosters into chunks of 10.
+  Future<List<AppUser>> getUserProfiles(List<String> uids) async {
+    if (uids.isEmpty) return [];
+    final users = <AppUser>[];
+    for (var i = 0; i < uids.length; i += 10) {
+      final chunk = uids.sublist(i, i + 10 > uids.length ? uids.length : i + 10);
+      final snapshot = await _firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      users.addAll(
+        snapshot.docs.map((doc) => AppUser.fromMap(doc.id, doc.data())),
+      );
+    }
+    return users;
+  }
 }

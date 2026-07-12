@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
+import '../services/theme_controller.dart';
+import 'admin/admin_dashboard_screen.dart';
 import 'auth/login_screen.dart';
 import 'student/student_home_screen.dart';
 import 'teacher/teacher_home_screen.dart';
 
 class AuthGate extends StatelessWidget {
-  AuthGate({super.key});
+  AuthGate({super.key, required this.themeController});
 
+  final ThemeController themeController;
   final _authService = AuthService();
 
   @override
@@ -47,8 +50,18 @@ class AuthGate extends StatelessWidget {
             }
 
             return switch (profile.role) {
-              UserRole.teacher => TeacherHomeScreen(user: profile),
-              UserRole.student => StudentHomeScreen(user: profile),
+              UserRole.teacher => TeacherHomeScreen(
+                user: profile,
+                themeController: themeController,
+              ),
+              UserRole.student => StudentHomeScreen(
+                user: profile,
+                themeController: themeController,
+              ),
+              UserRole.admin => AdminDashboardScreen(
+                user: profile,
+                themeController: themeController,
+              ),
             };
           },
         );

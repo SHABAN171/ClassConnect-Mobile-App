@@ -4,13 +4,20 @@ import '../../models/app_user.dart';
 import '../../models/class_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/class_service.dart';
+import '../../services/theme_controller.dart';
+import '../../widgets/theme_toggle_button.dart';
 import '../class_detail_screen.dart';
 import 'join_class_screen.dart';
 
 class StudentHomeScreen extends StatelessWidget {
-  StudentHomeScreen({super.key, required this.user});
+  StudentHomeScreen({
+    super.key,
+    required this.user,
+    required this.themeController,
+  });
 
   final AppUser user;
+  final ThemeController themeController;
   final _classService = ClassService();
 
   @override
@@ -19,6 +26,7 @@ class StudentHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Student Dashboard'),
         actions: [
+          ThemeToggleButton(themeController: themeController),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => AuthService().logout(),

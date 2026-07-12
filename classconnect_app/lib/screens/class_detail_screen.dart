@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/announcement_model.dart';
 import '../models/app_user.dart';
@@ -9,6 +10,8 @@ import '../services/announcement_service.dart';
 import '../services/assignment_service.dart';
 import 'announcements/create_announcement_screen.dart';
 import 'assignments/create_assignment_screen.dart';
+import 'attendance/attendance_tab.dart';
+import 'attendance/take_attendance_screen.dart';
 import 'messages/class_chat_tab.dart';
 
 class ClassDetailScreen extends StatefulWidget {
@@ -37,7 +40,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() => setState(() {}));
   }
 
@@ -48,19 +51,28 @@ class _ClassDetailScreenState extends State<ClassDetailScreen>
   }
 
   void _openCreateScreen() {
-    final route = _tabController.index == 0
-        ? MaterialPageRoute(
-            builder: (_) => CreateAnnouncementScreen(
-              classId: widget.classModel.id,
-              author: widget.currentUser,
-            ),
-          )
-        : MaterialPageRoute(
-            builder: (_) => CreateAssignmentScreen(
-              classId: widget.classModel.id,
-              author: widget.currentUser,
-            ),
-          );
+    final route = switch (_tabController.index) {
+      0 => MaterialPageRoute(
+        builder: (_) => CreateAnnouncementScreen(
+          classId: widget.classModel.id,
+          author: widget.currentUser,
+        ),
+      ),
+      1 => MaterialPageRoute(
+        builder: (_) => CreateAssignmentScreen(
+          classId: widget.classModel.id,
+          author: widget.currentUser,
+        ),
+      ),
+      3 => MaterialPageRoute(
+        builder: (_) => TakeAttendanceScreen(
+          classModel: widget.classModel,
+          teacher: widget.currentUser,
+        ),
+      ),
+      _ => null,
+    };
+    if (route == null) return;
     Navigator.of(context).push(route);
   }
 
@@ -71,10 +83,12 @@ class _ClassDetailScreenState extends State<ClassDetailScreen>
         title: Text(widget.classModel.name),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
             Tab(text: 'Announcements'),
             Tab(text: 'Assignments'),
             Tab(text: 'Messages'),
+            Tab(text: 'Attendance'),
           ],
         ),
       ),
@@ -106,6 +120,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen>
                   classId: widget.classModel.id,
                   currentUser: widget.currentUser,
                 ),
+                AttendanceTab(
+                  classId: widget.classModel.id,
+                  currentUser: widget.currentUser,
+                ),
               ],
             ),
           ),
@@ -114,14 +132,16 @@ class _ClassDetailScreenState extends State<ClassDetailScreen>
       floatingActionButton: _isTeacher && _tabController.index != 2
           ? FloatingActionButton.extended(
               onPressed: _openCreateScreen,
-              icon: Icon(
-                _tabController.index == 0 ? Icons.campaign : Icons.assignment,
-              ),
-              label: Text(
-                _tabController.index == 0
-                    ? 'New Announcement'
-                    : 'New Assignment',
-              ),
+              icon: Icon(switch (_tabController.index) {
+                0 => Icons.campaign,
+                1 => Icons.assignment,
+                _ => Icons.fact_check,
+              }),
+              label: Text(switch (_tabController.index) {
+                0 => 'New Announcement',
+                1 => 'New Assignment',
+                _ => 'Take Attendance',
+              }),
             )
           : null,
     );
@@ -215,6 +235,31 @@ class _ClassDetailScreenState extends State<ClassDetailScreen>
                           fontWeight: isOverdue ? FontWeight.bold : null,
                         ),
                       ),
+                    if (assignment.hasAttachment) ...[
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () => launchUrl(
+                          Uri.parse(assignment.attachmentUrl!),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.attach_file, size: 18),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                assignment.attachmentName!,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      decoration: TextDecoration.underline,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

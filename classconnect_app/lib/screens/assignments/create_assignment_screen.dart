@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -27,6 +28,7 @@ class _CreateAssignmentScreenState extends State<CreateAssignmentScreen> {
   final _descriptionController = TextEditingController();
   final _assignmentService = AssignmentService();
   DateTime? _dueDate;
+  PlatformFile? _attachment;
   bool _isLoading = false;
 
   @override
@@ -34,6 +36,12 @@ class _CreateAssignmentScreenState extends State<CreateAssignmentScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.pickFiles(withData: true);
+    if (result == null || result.files.isEmpty) return;
+    setState(() => _attachment = result.files.single);
   }
 
   Future<void> _pickDueDate() async {
@@ -66,6 +74,8 @@ class _CreateAssignmentScreenState extends State<CreateAssignmentScreen> {
         dueDate: _dueDate!,
         authorId: widget.author.uid,
         authorName: widget.author.name,
+        fileBytes: _attachment?.bytes,
+        fileName: _attachment?.name,
       );
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -124,6 +134,18 @@ class _CreateAssignmentScreenState extends State<CreateAssignmentScreen> {
                   ),
                   trailing: const Icon(Icons.calendar_month),
                   onTap: _pickDueDate,
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(_attachment?.name ?? 'No file attached'),
+                  trailing: _attachment == null
+                      ? const Icon(Icons.attach_file)
+                      : IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(() => _attachment = null),
+                        ),
+                  onTap: _attachment == null ? _pickAttachment : null,
                 ),
                 const SizedBox(height: 24),
                 PrimaryButton(

@@ -66,7 +66,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SegmentedButton<UserRole>(
-                  segments: UserRole.values
+                  // Admin accounts are never self-registered — only Teacher
+                  // and Student can be picked here.
+                  segments: const [UserRole.teacher, UserRole.student]
                       .map(
                         (role) => ButtonSegment(
                           value: role,

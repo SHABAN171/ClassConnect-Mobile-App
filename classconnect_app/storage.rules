@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// Note: the cross-service `firestore.get()` call below relies on Storage
+// Security Rules' Firestore integration. Verify this in the Firebase
+// console's Rules Playground before relying on it in production — it's a
+// less commonly used path than same-service `get()` in firestore.rules.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /assignments/{classId}/{assignmentId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+    }
+  }
+}
